@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatarUrl String?  @map("avatar_url")
+  timezone  String?
+  locale    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  settings  Json?
+
+  projects         Project[]
+  journalEntries   JournalEntry[]
+  storyCompilations StoryCompilation[]
+  notifications    Notification[]
+
+  @@map("users")
+}
+
+model Project {
+  id                String   @id @default(cuid())
+  userId            String   @map("user_id")
+  title             String
+  genre             String
+  styleInspiration  String?  @map("style_inspiration")
+  journalingPeriod  Int      @map("journaling_period_days")
+  startDate         DateTime @map("start_date") @db.Date
+  endDate           DateTime @map("end_date") @db.Date
+  status            ProjectStatus @default(ACTIVE)
+  wordsGoal         Int?     @map("words_goal")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  metadata          Json?
+
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journalEntries  JournalEntry[]
+  storyCompilations StoryCompilation[]
+  coverAssets     CoverAsset[]
+  notifications   Notification[]
+
+  @@map("projects")
+}
+
+model JournalEntry {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")
+  userId      String   @map("user_id")
+  title       String
+  body        String
+  wordCount   Int      @map("word_count")
+  moodTag     String?  @map("mood_tag")
+  attachments Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("journal_entries")
+}
+
+model StoryCompilation {
+  id           String   @id @default(cuid())
+  projectId    String   @map("project_id")
+  userId       String   @map("user_id")
+  type         String
+  aiParameters Json?
+  status       String   @default("queued")
+  resultUrl    String?  @map("result_url")
+  versionLabel String?
+  outline      Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("story_compilations")
+}
+
+model CoverAsset {
+  id         String   @id @default(cuid())
+  projectId  String   @map("project_id")
+  generatedBy String  @map("generated_by")
+  promptUsed String   @map("prompt_used")
+  s3Url      String?  @map("s3_url")
+  styleMeta  Json?    @map("style_meta")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("cover_assets")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  projectId String?  @map("project_id")
+  type      String
+  channel   String
+  schedule  DateTime
+  deliveredAt DateTime? @map("delivered_at")
+  payload   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@map("notifications")
+}
+
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  COMPILED
+  ARCHIVED
+}
