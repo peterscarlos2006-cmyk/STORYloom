@@ -25,6 +25,8 @@ import { BullModule } from '@nestjs/bull';
     CompilationModule,
     CoverModule,
     NotificationsModule,
+    EseModule,
+    LibraryModule,
   ],
 })
 export class AppModule {}

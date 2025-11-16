@@ -1,7 +1,8 @@
-import { Controller, Post, Get, Param, UseGuards, Req } from '@nestjs/common';
-import { CompilationService } from './cover.service';
+import { Controller, Post, Get, Param, UseGuards, Req, Body } from '@nestjs/common';
+import { CompilationService } from './compilation.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthenticatedRequest } from '../projects/projects.controller';
+import { CreateCompilationDto } from './create-compilation.dto';
 
 @Controller('projects/:projectId/compilations')
 @UseGuards(JwtAuthGuard)
@@ -12,10 +13,12 @@ export class CompilationController {
   async create(
     @Param('projectId') projectId: string,
     @Req() req: AuthenticatedRequest,
+    @Body() createCompilationDto: CreateCompilationDto,
   ) {
     return this.compilationService.createCompilationJob(
       req.user.userId,
       projectId,
+      createCompilationDto,
     );
   }
 
